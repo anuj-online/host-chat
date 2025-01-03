@@ -10,3 +10,20 @@
       --lumo-base-color: hsl(234, 40%, 9%);
 
     }
+
+vaadin-message-list {
+    display: flex;
+    flex-direction: column-reverse; /* This ensures the messages appear from bottom to top */
+}
+
+.from-self{
+    display: flex;
+    justify-self: flex-end;
+}
+[part="content"] > vaadin-message.from-self.div{
+    display:none;
+   }
+.from-other{
+    display: flex;
+    justify-self: flex-start;
+}
