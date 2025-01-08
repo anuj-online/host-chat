@@ -1,21 +1,22 @@
 package com.example.application.service;
 
-import com.vaadin.flow.server.webpush.WebPush;
-import com.vaadin.flow.server.webpush.WebPushMessage;
-import com.vaadin.flow.server.webpush.WebPushSubscription;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.example.application.repo.Subscription;
+import com.example.application.repo.SubscriptionRepository;
+import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.webpush.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.GeneralSecurityException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class WebPushService {
 
-    private static final Map<String, WebPushSubscription> SUBSCRIPTION_MAP = new HashMap<>();
+    private final SubscriptionRepository subscriptionRepository;
     WebPush webPush;
     @Value("${public.key}")
     private String publicKey;
@@ -23,6 +24,10 @@ public class WebPushService {
     private String privateKey;
     @Value("${subject}")
     private String subject;
+
+    private static String getUserName() {
+        return VaadinSession.getCurrent().getAttribute("user-name").toString();
+    }
 
     /**
      * Initialize security and push service for initial get request.
@@ -43,17 +48,25 @@ public class WebPushService {
      * @param body  message body
      */
     public void notifyAll(String title, String body) {
-        SUBSCRIPTION_MAP.values().forEach(subscription -> {
-            webPush.sendNotification(subscription, new WebPushMessage(title, body));
-        });
+        String userName = getUserName();
+        subscriptionRepository.findAll().stream().filter(subscription -> !subscription.getUserName().equals(userName)).forEach(subscription -> sendNotification(new WebPushSubscription(subscription.getEndpoint(), new WebPushKeys(subscription.getPublicKey(), subscription.getAuthKey())), "Message from " + userName, body));
     }
 
-    private Logger getLogger() {
-        return LoggerFactory.getLogger(WebPushService.class);
+    private void sendNotification(WebPushSubscription subscription, String userName, String body) {
+        try {
+            webPush.sendNotification(subscription, new WebPushMessage(userName, body));
+        } catch (WebPushException e) {
+            log.error("Subscription expired.", e);
+            subscriptionRepository.deleteByUserName(userName);
+        }
     }
 
     public void store(WebPushSubscription subscription) {
-        getLogger().info("Subscribed to ", subscription.endpoint());
+        log.info("Subscribed to {}", subscription.endpoint());
+        log.info("keys {}", subscription.keys());
+        var userSubscription = new Subscription().setTopic("chat").setEndpoint(subscription.endpoint()).setUserName(getUserName()).setAuthKey(subscription.keys().auth()).setPublicKey(subscription.keys().p256dh());
+
+        subscriptionRepository.save(userSubscription);
         /*
          * Note, in a real world app you'll want to persist these
          * in the backend. Also, you probably want to know which
@@ -61,17 +74,15 @@ public class WebPushService {
          * for different users. In this demo, we'll just use
          * endpoint URL as key to store subscriptions in memory.
          */
-        SUBSCRIPTION_MAP.put(subscription.endpoint(), subscription);
     }
 
-
     public void remove(WebPushSubscription subscription) {
-        getLogger().info("Unsubscribed ", subscription.endpoint());
-        SUBSCRIPTION_MAP.remove(subscription.endpoint());
+        log.info("Unsubscribed {}", subscription.endpoint());
+        subscriptionRepository.findByUserName(getUserName()).ifPresent(subscriptionRepository::delete);
     }
 
     public boolean isEmpty() {
-        return SUBSCRIPTION_MAP.isEmpty();
+        return subscriptionRepository.findByUserName(getUserName()).isEmpty();
     }
 
 }

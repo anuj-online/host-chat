@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: chat-app:latest
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mydatabase
+      - SPRING_DATASOURCE_USERNAME=myuser
+      - SPRING_DATASOURCE_PASSWORD=mypassword
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - PUBLIC_KEY={VAPID_PUBLIC_KEY)
+      - PRIVATE_KEY={VAPID_PRIVATE_KEY}
+      - SUBJECT={VAPID_SUBJECT}
+    networks:
+      - chatapp_default

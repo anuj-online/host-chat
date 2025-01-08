@@ -8,6 +8,7 @@ import com.vaadin.flow.theme.Theme;
 import com.vaadin.flow.theme.lumo.Lumo;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * The entry point of the Spring Boot application.
@@ -17,8 +18,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  */
 @SpringBootApplication
+@EnableAsync
 @Theme(value = "my-app", variant = Lumo.DARK)
-@PWA(name = "CHat App", shortName = "Chat App", backgroundColor = "#000000")
+@PWA(name = "Chat App", shortName = "Chat App", backgroundColor = "#000000", iconPath = "icons/maskable_icon.png")
 @Viewport("width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no")
 @Push
 public class Application implements AppShellConfigurator {

@@ -4,6 +4,7 @@ import com.vaadin.collaborationengine.CollaborationMessage;
 import com.vaadin.collaborationengine.CollaborationMessagePersister;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.page.WebStorage;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,12 +14,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+
 @Service
+@RequiredArgsConstructor
 public class ChatPersistService implements CollaborationMessagePersister {
     private final Map<String, List<CollaborationMessage>> messagesByTopic = new HashMap<>();
-    private final Map<String, UI>stringUIMap = new HashMap<>();
-    @Autowired
-    private WebPushService webPushService;
+
+    private final WebPushService webPushService;
+
     @Override
     public Stream<CollaborationMessage> fetchMessages(FetchQuery query) {
 
@@ -37,7 +40,7 @@ public class ChatPersistService implements CollaborationMessagePersister {
     public void persistMessage(PersistRequest request) {
         String topicId = request.getTopicId();
         CollaborationMessage message = request.getMessage();
-        webPushService.notifyAll("", request.getMessage().getText());
+        webPushService.notifyAll(topicId, request.getMessage().getText());
         // Add the message to the in-memory storage
         messagesByTopic.computeIfAbsent(topicId, k -> new ArrayList<>()).add(message);
     }
