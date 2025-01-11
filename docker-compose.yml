@@ -14,3 +14,11 @@ services:
       - PUBLIC_KEY={VAPID_PUBLIC_KEY)
       - PRIVATE_KEY={VAPID_PRIVATE_KEY}
       - SUBJECT={VAPID_SUBJECT}
+#curl https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/teamnet/routes \
+#-H "X-Auth-Email: d93740507@gmail.com" \
+#-H "X-Auth-Key: fryQG8Ysi8vywsr2E8E0_h3whq260cYWCbjGfycD"
+#
+#
+#//list tunnels
+#curl https://api.cloudflare.com/client/v4/accounts/14517d355147e8648e21d867f5fa70f6/cfd_tunnel \
+#-H "Authorization: Bearer Tjll2y1KuOc_yYoeW8gGbNRLpYUpAIwkn39w2dh4"

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <!-- Project from https://start.vaadin.com/project/25c0a7b2-a9a4-4ab0-a884-c8e49f56fec6 -->
     <groupId>com.example.application</groupId>
@@ -13,6 +13,7 @@
     <properties>
         <java.version>17</java.version>
         <vaadin.version>24.6.0</vaadin.version>
+        <postgresql.version>42.7.2</postgresql.version>
     </properties>
 
     <parent>
@@ -47,8 +48,8 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.6.0</version>
-            <scope>compile</scope>  <!-- This should not be "provided" in most cases -->
+            <version>${postgresql.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

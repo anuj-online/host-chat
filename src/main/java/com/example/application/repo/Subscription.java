@@ -22,4 +22,6 @@ public class Subscription {
     private String publicKey;  // The user's public key
     private String authKey;    // The user's auth secret key
     private String topic;      // The topic this user is subscribed to
+    private String password;
+    private String deviceId;
 }

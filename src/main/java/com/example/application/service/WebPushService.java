@@ -64,9 +64,16 @@ public class WebPushService {
     public void store(WebPushSubscription subscription) {
         log.info("Subscribed to {}", subscription.endpoint());
         log.info("keys {}", subscription.keys());
-        var userSubscription = new Subscription().setTopic("chat").setEndpoint(subscription.endpoint()).setUserName(getUserName()).setAuthKey(subscription.keys().auth()).setPublicKey(subscription.keys().p256dh());
 
-        subscriptionRepository.save(userSubscription);
+        subscriptionRepository.findByUserName(getUserName()).ifPresentOrElse(existingSubscription -> {
+            existingSubscription.setEndpoint(subscription.endpoint()).setAuthKey(subscription.keys().auth()).setPublicKey(subscription.keys().p256dh());
+            subscriptionRepository.save(existingSubscription);
+        }, () -> {
+            var userSubscription = new Subscription().setTopic("chat").setEndpoint(subscription.endpoint()).setUserName(getUserName()).setAuthKey(subscription.keys().auth()).setPublicKey(subscription.keys().p256dh());
+
+            subscriptionRepository.save(userSubscription);
+        });
+
         /*
          * Note, in a real world app you'll want to persist these
          * in the backend. Also, you probably want to know which
@@ -84,5 +91,5 @@ public class WebPushService {
     public boolean isEmpty() {
         return subscriptionRepository.findByUserName(getUserName()).isEmpty();
     }
-
+    //TODO create a device ID on login screen, and verify if the user is logged in from the same device, if not log out
 }
