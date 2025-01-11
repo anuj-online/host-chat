@@ -21,13 +21,17 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.webpush.WebPush;
+import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoIcon;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import elemental.json.JsonValue;
+import jakarta.annotation.security.PermitAll;
 import lombok.extern.slf4j.Slf4j;
 
 @PageTitle("Chat")
 @Route(value = "chat")
 @Slf4j
+@PermitAll
 public class ChatView extends VerticalLayout {
     private final ChatPersistService chatPersistService;
     private final TextField userName = new TextField("Username");
@@ -35,17 +39,41 @@ public class ChatView extends VerticalLayout {
     private final WebPushService webPushService;
 
     public ChatView(ChatPersistService chatPersistService, WebPushService webPushService) {
+        this.addClassName("chatview");
         this.chatPersistService = chatPersistService;
         this.webPush = webPushService.getWebPush();
         this.webPushService = webPushService;
-        this.setWidthFull();
+        this.setSizeFull();
         this.setMaxWidth("815px");
         this.getStyle().set("justify-self", "center");
+        this.addClassName(LumoUtility.AlignItems.CENTER);
+        themeToggle();
     }
+
+    private void themeToggle() {
+        var themeList = this.getElement().getThemeList();
+        WebStorage.getItem("theme", value -> {
+            if (value != null && value.equals("dark")) {
+                themeList.add(Lumo.DARK);
+            }
+        });
+        var toggleButton = new Button("Toggle dark theme", click -> {
+            if (themeList.contains(Lumo.DARK)) {
+                themeList.remove(Lumo.DARK);
+                WebStorage.removeItem("theme");
+            } else {
+                themeList.add(Lumo.DARK);
+                WebStorage.setItem("theme", "dark");
+            }
+            UI.getCurrent().getPage().reload();
+        });
+        add(toggleButton);
+    }
+
 
     @Override
     protected void onAttach(AttachEvent attachEvent) {
-        UI ui = UI.getCurrent();
+        var ui = UI.getCurrent();
         ui.getPage().executeJs("return window.matchMedia('(display-mode: standalone)').matches ? 'installed' : 'not_installed';").then(jsonValue -> {
             verifyInstallMode(jsonValue, ui);
         });
@@ -58,9 +86,9 @@ public class ChatView extends VerticalLayout {
             installed(ui);
         } else {
             UI.getCurrent().getPage().retrieveExtendedClientDetails(r -> {
-                H2 h2 = new H2("This PWA works only upon installation.");
+                var h2 = new H2("This App works only upon installation.");
                 if (r.isIOS() || r.isIPad()) {
-                    VerticalLayout verticalLayout = new VerticalLayout();
+                    var verticalLayout = new VerticalLayout();
                     verticalLayout.addClassName("banner");
                     verticalLayout.add(h2);
                     verticalLayout.add(new HorizontalLayout(new NativeLabel("Click on share"), new Svg(ShareIcon.SVG)));
@@ -68,24 +96,26 @@ public class ChatView extends VerticalLayout {
                     add(verticalLayout);
                 } else if (r.isTouchDevice()) {
                     add(h2);
+                } else {
+                    add("This App works only on mobile device.");
                 }
             });
         }
     }
 
     private void installed(UI ui) {
-        WebStorage.getItem("user-name").whenComplete((s, throwable) -> {
-            log.info("getting username from storage {}", s);
-            if (s == null) {
-                firstTimeUser(ui, s);
+        WebStorage.getItem("user-name").whenComplete((userNameFromStorage, throwable) -> {
+            log.info("getting username from storage {}", userNameFromStorage);
+            if (userNameFromStorage == null) { // TODO this should be gone, inverse the condition and else becomes if
+                firstTimeUser(ui, userNameFromStorage);
             } else {
-                VaadinSession.getCurrent().setAttribute("user-name", s);
+                VaadinSession.getCurrent().setAttribute("user-name", userNameFromStorage);
                 webPush.subscriptionExists(ui, registered -> {
                     if (registered && webPushService.isEmpty()) {
-                        webPush.fetchExistingSubscription(ui, subscription -> webPushService.store(subscription));
+                        webPush.fetchExistingSubscription(ui, webPushService::store);
                     }
                 });
-                chat(s);
+                chat(userNameFromStorage);
             }
         });
     }
@@ -99,11 +129,11 @@ public class ChatView extends VerticalLayout {
             var dialog = new Dialog();
             dialog.add(userName);
             dialog.add(new Button("Start Chat", e -> {
-                userName.getOptionalValue().ifPresentOrElse(userName1 -> {
-                    chat(userName1);
-                    VaadinSession.getCurrent().setAttribute("user-name", userName1);
-                    WebStorage.setItem("user-name", userName1);
-                    webPush.subscribe(UI.getCurrent(), subscription -> webPushService.store(subscription));
+                userName.getOptionalValue().ifPresentOrElse(userNameFromDialog -> {
+                    chat(userNameFromDialog);
+                    VaadinSession.getCurrent().setAttribute("user-name", userNameFromDialog);
+                    WebStorage.setItem("user-name", userNameFromDialog);
+                    webPush.subscribe(UI.getCurrent(), webPushService::store);
                     dialog.close();
                 }, () -> Notification.show("Please enter user"));
             }));
@@ -124,6 +154,7 @@ public class ChatView extends VerticalLayout {
             }
         });
         var input = new CollaborationMessageInput(messages);
+        input.focus();
         messages.setWidthFull();
         input.setWidthFull();
         add(messages, input);

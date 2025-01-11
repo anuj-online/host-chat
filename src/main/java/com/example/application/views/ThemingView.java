@@ -12,23 +12,21 @@ public class ThemingView extends Dialog {
     //this code worked on UI, not working on Layout. Need a good place to integrate this
     //the idea is to store the color in local storage, read on load, if present update the color
     public ThemingView() {
-
         WebStorage.getItem("bg", bgcolor -> {
             AtomicReference<String> bg = new AtomicReference<>();
-            if (bgcolor == null) {
-                List<String> colors = List.of("red", "yellow", "green");
-                Select<String> stringSelect = new Select<>();
-                stringSelect.setLabel("Select background color");
-                stringSelect.setItems(colors);
-                stringSelect.addValueChangeListener(v -> {
-                    bg.set(stringSelect.getValue());
-                    WebStorage.setItem("bg", stringSelect.getValue());
-                });
-                add(stringSelect);
-            } else {
+            List<String> colors = List.of("red", "yellow", "green");
+            Select<String> stringSelect = new Select<>();
+            stringSelect.setLabel("Select background color");
+            stringSelect.setItems(colors);
+            stringSelect.addValueChangeListener(v -> {
+                bg.set(stringSelect.getValue());
+                WebStorage.setItem("bg", stringSelect.getValue());
+            });
+            add(stringSelect);
+            if (bgcolor != null) {
                 bg.set(bgcolor);
             }
-            this.getParent().get().getStyle().set("background", bg.get());
+            this.getParent().ifPresent(component -> component.getStyle().set("background", bg.get()));
         });
     }
 }
