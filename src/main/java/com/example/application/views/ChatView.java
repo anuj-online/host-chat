@@ -2,6 +2,7 @@ package com.example.application.views;
 
 import com.example.application.service.ChatPersistService;
 import com.example.application.service.WebPushService;
+import com.example.application.util.SessionStorage;
 import com.vaadin.collaborationengine.CollaborationMessageInput;
 import com.vaadin.collaborationengine.CollaborationMessageList;
 import com.vaadin.collaborationengine.UserInfo;
@@ -131,7 +132,7 @@ public class ChatView extends VerticalLayout {
             dialog.add(new Button("Start Chat", e -> {
                 userName.getOptionalValue().ifPresentOrElse(userNameFromDialog -> {
                     chat(userNameFromDialog);
-                    VaadinSession.getCurrent().setAttribute("user-name", userNameFromDialog);
+                    SessionStorage.store("user-name", userNameFromDialog);
                     WebStorage.setItem("user-name", userNameFromDialog);
                     webPush.subscribe(UI.getCurrent(), webPushService::store);
                     dialog.close();

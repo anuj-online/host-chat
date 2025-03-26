@@ -7,6 +7,8 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.WebBrowser;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -40,7 +42,8 @@ public class Init extends Div {
             UI.getCurrent().getPage().retrieveExtendedClientDetails(r -> {
                 var h2 = new H2("Install the App and enable Notifications.");
                 var h3 = new H4("That's it. You are done.");
-                if (r.isTouchDevice()) {
+                WebBrowser browser = VaadinSession.getCurrent().getBrowser();
+                if (r.isTouchDevice() && (browser.isAndroid() || browser.isIPhone() || browser.isWindowsPhone())) {
                     var verticalLayout = new VerticalLayout();
                     verticalLayout.addClassName("banner");
                     verticalLayout.add(h2, h3);
