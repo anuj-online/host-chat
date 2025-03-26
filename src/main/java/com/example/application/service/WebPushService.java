@@ -2,14 +2,12 @@ package com.example.application.service;
 
 import com.example.application.repo.Subscription;
 import com.example.application.repo.SubscriptionRepository;
-import com.vaadin.flow.server.VaadinSession;
+import com.example.application.util.SessionStorage;
 import com.vaadin.flow.server.webpush.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.security.GeneralSecurityException;
 
 @Service
 @Slf4j
@@ -26,14 +24,9 @@ public class WebPushService {
     private String subject;
 
     private static String getUserName() {
-        return VaadinSession.getCurrent().getAttribute("user-name").toString();
+        return SessionStorage.get("user-name");
     }
 
-    /**
-     * Initialize security and push service for initial get request.
-     *
-     * @throws GeneralSecurityException security exception for security complications
-     */
     public WebPush getWebPush() {
         if (webPush == null) {
             webPush = new WebPush(publicKey, privateKey, subject);
@@ -49,7 +42,15 @@ public class WebPushService {
      */
     public void notifyAll(String title, String body) {
         String userName = getUserName();
-        subscriptionRepository.findAll().stream().filter(subscription -> !subscription.getUserName().equals(userName)).forEach(subscription -> sendNotification(new WebPushSubscription(subscription.getEndpoint(), new WebPushKeys(subscription.getPublicKey(), subscription.getAuthKey())), "Message from " + userName, body));
+        subscriptionRepository.findAll()
+                .stream()
+                .filter(subscription -> !subscription.getUserName().equals(userName))
+                .filter(subscription -> subscription.getTopic().contains(title))
+                .forEach(subscription -> sendNotification(body, subscription, userName));
+    }
+
+    private void sendNotification(String body, Subscription subscription, String userName) {
+        sendNotification(new WebPushSubscription(subscription.getEndpoint(), new WebPushKeys(subscription.getPublicKey(), subscription.getAuthKey())), "Message from " + userName, body);
     }
 
     private void sendNotification(WebPushSubscription subscription, String userName, String body) {
@@ -64,9 +65,16 @@ public class WebPushService {
     public void store(WebPushSubscription subscription) {
         log.info("Subscribed to {}", subscription.endpoint());
         log.info("keys {}", subscription.keys());
-        var userSubscription = new Subscription().setTopic("chat").setEndpoint(subscription.endpoint()).setUserName(getUserName()).setAuthKey(subscription.keys().auth()).setPublicKey(subscription.keys().p256dh());
 
-        subscriptionRepository.save(userSubscription);
+        subscriptionRepository.findByUserName(getUserName()).ifPresentOrElse(existingSubscription -> {
+            existingSubscription.setEndpoint(subscription.endpoint()).setAuthKey(subscription.keys().auth()).setPublicKey(subscription.keys().p256dh());
+            subscriptionRepository.save(existingSubscription);
+        }, () -> {
+            var userSubscription = new Subscription().setTopic("chat").setEndpoint(subscription.endpoint()).setUserName(getUserName()).setAuthKey(subscription.keys().auth()).setPublicKey(subscription.keys().p256dh());
+
+            subscriptionRepository.save(userSubscription);
+        });
+
         /*
          * Note, in a real world app you'll want to persist these
          * in the backend. Also, you probably want to know which
@@ -84,5 +92,5 @@ public class WebPushService {
     public boolean isEmpty() {
         return subscriptionRepository.findByUserName(getUserName()).isEmpty();
     }
-
+    //TODO create a device ID on login screen, and verify if the user is logged in from the same device, if not log out
 }

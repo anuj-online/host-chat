@@ -12,15 +12,14 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * The entry point of the Spring Boot application.
- *
+ * <p>
  * Use the @PWA annotation make the application installable on phones, tablets
  * and some desktop browsers.
- *
  */
 @SpringBootApplication
 @EnableAsync
-@Theme(value = "my-app", variant = Lumo.DARK)
-@PWA(name = "Chat App", shortName = "Chat App", backgroundColor = "#000000", iconPath = "icons/maskable_icon.png")
+@Theme(value = "my-app", variant = Lumo.LIGHT)
+@PWA(name = "Chat App", shortName = "Chat App", themeColor = "#968f27", iconPath = "icons/maskable_icon.png")
 @Viewport("width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no")
 @Push
 public class Application implements AppShellConfigurator {
